@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Viral Clips — Turn any YouTube video into 10 ready-to-post clips</title>
+<meta name="description" content="Paste a YouTube link. We detect highlights with a transparent, rule-based scoring system and generate 10 ready-to-post clips with captions." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1a0900" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l12 9-12 9V3z"/></svg>
+    </span>
+    Viral Clips
+  </div>
+  <div class="topbar-meta">free-tier · rule-based detection</div>
+</header>
+
+<!-- ============================== LANDING ============================== -->
+<main id="view-landing" class="view active">
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">No paid APIs · runs on your own server</div>
+        <h1>Turn Any YouTube Video Into <em>Viral</em> Clips Instantly</h1>
+        <p class="lede">Paste a link. We detect highlights. We generate 10 ready-to-post clips — each scored and explained, with captions included.</p>
+
+        <form id="url-form" class="url-form">
+          <input
+            id="youtube-url-input"
+            type="text"
+            inputmode="url"
+            autocomplete="off"
+            placeholder="https://www.youtube.com/watch?v=…"
+            required
+          />
+          <button type="submit" class="btn btn-primary" id="generate-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+            Generate Clips
+          </button>
+        </form>
+        <div class="form-error" id="form-error"></div>
+        <div class="url-examples">Works with most public YouTube videos that have captions — auto-generated captions are fine.</div>
+      </div>
+
+      <div class="pulse-timeline" aria-hidden="true">
+        <div class="pt-label"><span>source video</span><span>00:00 — 12:40</span></div>
+        <div class="pt-track" id="hero-track">
+          <div class="pt-marker high" style="left:14%"><span class="pt-tooltip">High · 0:48</span></div>
+          <div class="pt-marker medium" style="left:38%"><span class="pt-tooltip">Medium · 3:12</span></div>
+          <div class="pt-marker high" style="left:61%"><span class="pt-tooltip">High · 7:42</span></div>
+          <div class="pt-marker low" style="left:80%"><span class="pt-tooltip">Low · 10:05</span></div>
+          <div class="pt-marker high" style="left:93%"><span class="pt-tooltip">High · 11:50</span></div>
+        </div>
+        <div class="pt-rows">
+          <div class="pt-row"><span class="pt-dot high"></span> "Did you know this changes everything?" <span class="pt-time">0:48–1:09</span></div>
+          <div class="pt-row"><span class="pt-dot high"></span> "Listen — this is the part nobody tells you" <span class="pt-time">7:42–8:05</span></div>
+          <div class="pt-row"><span class="pt-dot medium"></span> "Here's why most people get this wrong" <span class="pt-time">3:12–3:30</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/></svg></div>
+        <h3>Auto viral detection</h3>
+        <p>Transparent, rule-based scoring — emotional words, hooks, and punchy lines, not a black box.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        <h3>10 clips, automatically</h3>
+        <p>The best non-overlapping moments are cut and ranked, so you're never picking through dead air.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
+        <h3>Auto captions</h3>
+        <p>Every clip comes with a synced .srt file and a toggleable caption overlay in the player.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0l-4-4m4 4l4-4M5 21h14"/></svg></div>
+        <h3>Instant download</h3>
+        <p>Grab any clip as an MP4 or its captions as an SRT — no watermark, no account.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================== PROCESSING ============================== -->
+<main id="view-processing" class="view">
+  <div class="processing-wrap">
+    <div class="eyebrow" style="justify-content:center">Analyzing viral moments…</div>
+    <h2 id="processing-title">Working on your video</h2>
+    <p class="sub" id="processing-sub">This usually takes a minute or two, depending on video length.</p>
+
+    <div class="scan-track">
+      <div class="scan-fill" id="scan-fill"></div>
+      <div class="scan-glow" id="scan-glow"></div>
+    </div>
+
+    <div class="steps" id="steps-list">
+      <div class="step-row" data-step="fetching_video">
+        <span class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0b0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Fetching video
+      </div>
+      <div class="step-row" data-step="extracting_transcript">
+        <span class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0b0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Extracting transcript
+      </div>
+      <div class="step-row" data-step="detecting_moments">
+        <span class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0b0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Detecting viral moments
+      </div>
+      <div class="step-row" data-step="generating_clips">
+        <span class="step-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0b0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Generating clips
+        <span class="step-count" id="clip-progress-count"></span>
+      </div>
+    </div>
+
+    <div class="processing-error" id="processing-error">
+      <strong>Something went wrong.</strong>
+      <div id="processing-error-message" style="margin-top:6px;color:#ffcfc2;"></div>
+      <button class="btn btn-ghost" style="margin-top:14px" id="try-again-btn">Try another video</button>
+    </div>
+  </div>
+</main>
+
+<!-- ============================== RESULTS ============================== -->
+<main id="view-results" class="view">
+  <div class="results-wrap">
+    <div class="results-header">
+      <div>
+        <h2 id="results-title">Your clips are ready</h2>
+        <div class="sub">Source: <span class="mono" id="results-source-info">—</span></div>
+      </div>
+      <button class="btn btn-ghost" id="new-video-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Try another video
+      </button>
+    </div>
+
+    <div class="results-layout">
+      <div class="clip-grid" id="clip-grid"></div>
+
+      <aside class="why-panel" id="why-panel">
+        <div class="wp-eyebrow">Why this clip was selected</div>
+        <div id="why-panel-content">
+          <p class="wp-empty">Click any clip to see the signals that made it score well — emotional words, hooks, questions, and punchy lines.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="footer-note">Rule-based MVP — scoring is heuristic, not machine-learned. Treat results as a first pass.</div>
+</main>
+
+<!-- ============================== VIDEO PLAYER MODAL ============================== -->
+<div class="modal-backdrop" id="player-backdrop">
+  <div class="player-modal-wrap">
+    <button class="close-modal" id="close-player-btn">Close ✕</button>
+    <div class="player-modal">
+      <video id="player-video" controls></video>
+      <div class="player-controls">
+        <span class="pc-title" id="player-title">Clip title</span>
+        <button class="toggle on" id="captions-toggle">
+          <span class="switch"></span> Captions
+        </button>
+        <select class="speed" id="speed-select">
+          <option value="0.75">0.75×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+        <a class="btn btn-ghost" id="player-download-btn" download>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Download
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>window.VIRAL_CLIPS_API_BASE = "https://viral-clips.onrender.com";</script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+        </html>
