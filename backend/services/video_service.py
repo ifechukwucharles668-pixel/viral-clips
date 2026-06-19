@@ -9,6 +9,31 @@ import os
 import re
 import subprocess
 
+# Optional: path to a cookies.txt file (Netscape format) exported from a
+# logged-in browser session. Not required, but if YouTube starts blocking
+# requests with "Sign in to confirm you're not a bot", setting the
+# COOKIES_FILE environment variable to point at an uploaded cookies file
+# is the most effective fix. Safe to leave unset.
+COOKIES_FILE = os.environ.get("COOKIES_FILE")
+
+# Trying a few different "player clients" makes requests look like they're
+# coming from the YouTube mobile apps rather than a script, which is less
+# likely to get flagged as a bot.
+_PLAYER_CLIENTS = ["android", "ios", "web"]
+
+
+def _base_ydl_opts(extra=None):
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extractor_args": {"youtube": {"player_client": _PLAYER_CLIENTS}},
+    }
+    if COOKIES_FILE and os.path.exists(COOKIES_FILE):
+        opts["cookiefile"] = COOKIES_FILE
+    if extra:
+        opts.update(extra)
+    return opts
+
 
 def extract_video_id(youtube_url: str) -> str:
     patterns = [
@@ -25,7 +50,7 @@ def extract_video_id(youtube_url: str) -> str:
 def get_video_info(youtube_url: str) -> dict:
     """Lightweight metadata fetch, no download."""
     import yt_dlp
-    ydl_opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+    ydl_opts = _base_ydl_opts({"skip_download": True})
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(youtube_url, download=False)
     return {
@@ -46,14 +71,12 @@ def download_source_video(youtube_url: str, out_dir: str, filename: str = "sourc
     out_path = os.path.join(out_dir, filename)
     import yt_dlp
 
-    ydl_opts = {
+    ydl_opts = _base_ydl_opts({
         "format": "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
         "outtmpl": out_path,
         "merge_output_format": "mp4",
-        "quiet": True,
-        "no_warnings": True,
         "noplaylist": True,
-    }
+    })
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
