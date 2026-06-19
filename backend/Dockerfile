@@ -21,4 +21,4 @@ ENV PORT=5000
 EXPOSE 5000
 
 # gunicorn for production; falls back fine for an MVP workload
-CMD ["gunicorn", "--bind", "0.0.0.0:5000"
+CMD gunicorn --bind 0.0.0.0:5000 --workers 1 --threads 4 --timeout 600 app:app
