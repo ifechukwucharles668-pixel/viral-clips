@@ -212,6 +212,7 @@ input { font-family: inherit; }
 }
 
 .btn:active { transform: scale(0.97); }
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--ember), #ff7a36);
@@ -248,7 +249,72 @@ input { font-family: inherit; }
   margin-top: 14px;
   font-size: 12.5px;
   color: var(--muted);
+}.upload-card {
+  max-width: 560px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: 18px;
 }
+
+.upload-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--void-2);
+  border-radius: var(--radius-s);
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab-btn.active {
+  background: var(--panel-2);
+  color: var(--ink);
+}
+
+.tab-panel[hidden] { display: none; }
+
+.file-drop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius-s);
+  padding: 18px 16px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.file-drop:hover { border-color: var(--teal); color: var(--ink); }
+.file-drop.has-file { border-color: var(--teal); border-style: solid; color: var(--ink); }
+.file-drop svg { flex-shrink: 0; color: var(--teal); }
+
+.upload-submit-btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.youtube-warning {
+  background: var(--gold-dim);
+  border: 1px solid #f2b84b40;
+  color: #f5cf8a;
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+   }
 
 /* Signature element: pulse timeline ------------------------------------ */
 
