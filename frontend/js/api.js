@@ -13,7 +13,20 @@ async function apiCreateJob(youtubeUrl) {
     throw new Error(data.error || "Could not start the job.");
   }
   return data.job_id;
-}
+}async function apiCreateUploadJob(file) {
+  const formData = new FormData();
+  formData.append("video", file);
+
+  const res = await fetch(`${API_BASE_URL}/api/jobs/upload`, {
+    method: "POST",
+    body: formData, // no Content-Type header — the browser sets the
+                     // multipart boundary automatically for FormData
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Could not start the job.");
+  }
+  return data.job_id;
 
 async function apiGetJob(jobId) {
   const res = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`);
