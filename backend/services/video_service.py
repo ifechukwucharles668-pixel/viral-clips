@@ -90,6 +90,30 @@ def download_source_video(youtube_url: str, out_dir: str, filename: str = "sourc
     return out_path
 
 
+def get_local_video_info(path: str) -> dict:
+    """
+    Reads basic info (currently just duration) from a local video file using
+    ffprobe. Used for the "upload a video" path, where there's no YouTube
+    metadata to ask for instead.
+    """
+    cmd = [
+        "ffprobe", "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        path,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"Could not read the uploaded video file: {result.stderr[-500:]}")
+
+    try:
+        duration = float(result.stdout.strip())
+    except ValueError:
+        duration = None
+
+    return {"duration": duration}
+
+
 def cut_clip(source_path: str, start: float, end: float, out_path: str,
              burn_subtitles_path: str = None) -> str:
     """
