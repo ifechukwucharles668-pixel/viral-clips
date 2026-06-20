@@ -3,3 +3,4 @@ flask-cors==5.0.0
 yt-dlp==2026.3.17
 youtube-transcript-api==0.6.3
 gunicorn==23.0.0
+faster-whisper==1.2.1
