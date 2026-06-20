@@ -23,7 +23,67 @@ function showView(name) {
 }
 
 // ---------------------------------------------------------------------
-// Landing -> submit
+// Tab switching (upload vs YouTube link)
+// ---------------------------------------------------------------------
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".tab-panel").forEach((panel) => {
+      panel.hidden = panel.dataset.panel !== target;
+    });
+  });
+});
+
+// ---------------------------------------------------------------------
+// Upload flow
+// ---------------------------------------------------------------------
+
+let selectedFile = null;
+
+document.getElementById("video-file-input").addEventListener("change", (e) => {
+  selectedFile = e.target.files[0] || null;
+  const label = document.getElementById("file-drop-label");
+  const text = document.getElementById("file-drop-text");
+  document.getElementById("upload-error").style.display = "none";
+  if (selectedFile) {
+    label.classList.add("has-file");
+    text.textContent = selectedFile.name;
+  } else {
+    label.classList.remove("has-file");
+    text.textContent = "Tap to choose a video file";
+  }
+});
+
+document.getElementById("generate-upload-btn").addEventListener("click", async () => {
+  const errorEl = document.getElementById("upload-error");
+  const btn = document.getElementById("generate-upload-btn");
+  errorEl.style.display = "none";
+
+  if (!selectedFile) {
+    errorEl.textContent = "Choose a video file first.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const jobId = await apiCreateUploadJob(selectedFile);
+    currentJobId = jobId;
+    resetProcessingUI();
+    showView("processing");
+    stopPolling = pollJob(jobId, { onUpdate: handleJobUpdate });
+  } catch (err) {
+    errorEl.textContent = err.message || "Could not start the job. Is the backend running?";
+    errorEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------------
+// Landing -> submit (YouTube link)
 // ---------------------------------------------------------------------
 
 function isLikelyYoutubeUrl(value) {
@@ -68,10 +128,13 @@ function goHome() {
   currentJobId = null;
   currentJob = null;
   selectedClipId = null;
+  selectedFile = null;
   document.getElementById("youtube-url-input").value = "";
+  document.getElementById("video-file-input").value = "";
+  document.getElementById("file-drop-label").classList.remove("has-file");
+  document.getElementById("file-drop-text").textContent = "Tap to choose a video file";
   showView("landing");
 }
-
 // ---------------------------------------------------------------------
 // Processing view
 // ---------------------------------------------------------------------
