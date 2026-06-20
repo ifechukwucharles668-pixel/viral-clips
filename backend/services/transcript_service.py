@@ -1,109 +1,76 @@
 """
-transcript_service.py
-----------------------
-Extracts a timestamped transcript for a YouTube video using only free
-methods:
+transcription_service.py
+-------------------------
+Generates a timestamped transcript for an arbitrary local video/audio file
+using faster-whisper — a free, locally-run speech-to-text model. No paid
+APIs, no network calls beyond a one-time model download on first use.
 
-  1. youtube-transcript-api (fastest, no video download needed) — uses
-     YouTube's own caption tracks (manual or auto-generated).
-  2. yt-dlp caption download (.vtt) as a fallback if (1) fails or the
-     video has captions disabled for that library but available via
-     yt-dlp's extractor.
-
-Returns a list of: {"start": float, "duration": float, "text": str}
+This is the upload-a-video counterpart to transcript_service.py (which
+handles the YouTube-caption path). Both produce the same shape of output:
+a list of {"start": float, "duration": float, "text": str} entries, so the
+rest of the pipeline (scorer, caption_service, video_service) doesn't need
+to know or care which path produced the transcript.
 """
 
 import os
-import re
-import glob
 
-from services.video_service import extract_video_id
+# "tiny.en" is the smallest, fastest Whisper model — picked deliberately so
+# this can run on small/free-tier hardware (e.g. Render's free plan) within
+# a reasonable amount of time. It's English-only and less accurate than
+# larger models, but is a solid trade-off for an MVP. Override via env var
+# if you later move to a bigger instance and want better accuracy.
+WHISPER_MODEL_SIZE = os.environ.get("WHISPER_MODEL_SIZE", "tiny.en")
 
-
-def _get_transcript_via_api(video_id: str):
-    from youtube_transcript_api import YouTubeTranscriptApi
-
-    api = YouTubeTranscriptApi()
-    transcript_list = api.list(video_id)
-
-    fetched = None
-    try:
-        fetched = transcript_list.find_transcript(["en"]).fetch()
-    except Exception:
-        # fall back to whatever transcript exists (auto-translate to English if possible)
-        for t in transcript_list:
-            try:
-                if t.is_translatable:
-                    fetched = t.translate("en").fetch()
-                else:
-                    fetched = t.fetch()
-                break
-            except Exception:
-                continue
-
-    if fetched is None:
-        raise RuntimeError("No transcript available via youtube-transcript-api")
-
-    entries = []
-    for snippet in fetched:
-        # snippet supports both attribute and dict-style access depending on version
-        text = getattr(snippet, "text", None) or snippet.get("text", "")
-        start = getattr(snippet, "start", None)
-        if start is None:
-            start = snippet.get("start", 0.0)
-        duration = getattr(snippet, "duration", None)
-        if duration is None:
-            duration = snippet.get("duration", 1.0)
-        entries.append({"start": float(start), "duration": float(duration), "text": text})
-
-    return entries
+_model = None  # lazy-loaded, shared across requests in this process
 
 
-def _parse_vtt(vtt_path: str):
-    """Minimal WebVTT parser -> list of {start, duration, text}."""
-    timestamp_re = re.compile(
-        r"(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})\s*-->\s*"
-        r"(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})"
+def _get_model():
+    global _model
+    if _model is None:
+        from faster_whisper import WhisperModel
+        # int8 compute type keeps memory/CPU usage low — important on
+        # small free-tier instances. CPU-only since free tiers have no GPU.
+        _model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
+    return _model
+
+
+def transcribe_video(media_path: str, language: str = "en"):
+    """
+    Runs local speech-to-text on a video/audio file and returns a transcript
+    in the same shape used everywhere else in this app:
+        [{"start": float, "duration": float, "text": str}, ...]
+
+    Raises RuntimeError if no speech could be detected/transcribed at all.
+    """
+    model = _get_model()
+
+    segments, _info = model.transcribe(
+        media_path,
+        language=language,
+        vad_filter=True,  # skips silent stretches, speeds things up
+        beam_size=1,       # fastest setting; good enough for an MVP
     )
 
-    def to_seconds(ts: str) -> float:
-        parts = ts.split(":")
-        if len(parts) == 3:
-            h, m, s = parts
-        else:
-            h, m, s = "0", parts[0], parts[1]
-        return int(h) * 3600 + int(m) * 60 + float(s)
-
     entries = []
-    with open(vtt_path, "r", encoding="utf-8", errors="ignore") as f:
-        lines = f.read().splitlines()
-
-    i = 0
-    while i < len(lines):
-        match = timestamp_re.search(lines[i])
-        if match:
-            start = to_seconds(match.group(1))
-            end = to_seconds(match.group(2))
-            i += 1
-            text_lines = []
-            while i < len(lines) and lines[i].strip() and not timestamp_re.search(lines[i]):
-                clean = re.sub(r"<[^>]+>", "", lines[i]).strip()
-                if clean:
-                    text_lines.append(clean)
-                i += 1
-            text = " ".join(text_lines).strip()
-            if text:
-                entries.append({"start": start, "duration": max(end - start, 0.1), "text": text})
-        else:
-            i += 1
-
-    # de-duplicate consecutive identical/overlapping caption lines (common in auto-captions)
-    deduped = []
-    for entry in entries:
-        if deduped and deduped[-1]["text"] == entry["text"]:
-            deduped[-1]["duration"] = (entry["start"] + entry["duration"]) - deduped[-1]["start"]
+    for seg in segments:
+        text = (seg.text or "").strip()
+        if not text:
             continue
-        deduped.append(entry)
+        start = float(seg.start)
+        end = float(seg.end)
+        entries.append({
+            "start": start,
+            "duration": max(end - start, 0.1),
+            "text": text,
+        })
+
+    if not entries:
+        raise RuntimeError(
+            "Could not detect any speech in this video. Try a clip with "
+            "clearer spoken audio."
+        )
+
+    return entries        deduped.append(entry)
 
     return deduped
 
