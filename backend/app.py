@@ -4,7 +4,8 @@ app.py
 Flask API for the Viral Clips MVP.
 
 Endpoints:
-  POST /api/jobs                                  -> create a job, returns {job_id}
+  POST /api/jobs                                  -> create a job from a YouTube link, returns {job_id}
+  POST /api/jobs/upload                            -> create a job from an uploaded video file
   GET  /api/jobs/<job_id>                          -> full job status + clips
   GET  /api/jobs/<job_id>/clips/<clip_id>/video     -> stream/download the clip mp4
   GET  /api/jobs/<job_id>/clips/<clip_id>/srt       -> download the clip .srt
@@ -13,16 +14,22 @@ Endpoints:
 """
 
 import os
+import tempfile
 
 from flask import Flask, request, jsonify, send_file, abort
 from flask_cors import CORS
 
-from jobs import create_job, get_job, get_job_dir
+from jobs import create_job, create_job_from_upload, get_job, get_job_dir
 
 app = Flask(__name__)
-CORS(app)  # allow the separately-hosted frontend (e.g. Vercel) to call this API
+CORS(app)  # allow the separately-hosted frontend (e.g. Netlify) to call this API
 
 MAX_URL_LENGTH = 500
+ALLOWED_UPLOAD_EXTENSIONS = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi"}
+
+# Caps request body size so a huge upload can't exhaust a free-tier instance.
+# 300MB is generous for a few minutes of video at reasonable quality.
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024
 
 
 def _public_job_view(job: dict) -> dict:
@@ -61,6 +68,28 @@ def create_job_endpoint():
         return jsonify({"error": "Please provide a valid YouTube URL"}), 400
 
     job_id = create_job(youtube_url)
+    return jsonify({"job_id": job_id}), 201
+
+
+@app.post("/api/jobs/upload")
+def create_job_from_upload_endpoint():
+    if "video" not in request.files:
+        return jsonify({"error": "No video file was uploaded"}), 400
+
+    file = request.files["video"]
+    if not file.filename:
+        return jsonify({"error": "No video file was uploaded"}), 400
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        allowed = ", ".join(sorted(ALLOWED_UPLOAD_EXTENSIONS))
+        return jsonify({"error": f"Unsupported file type. Allowed: {allowed}"}), 400
+
+    fd, tmp_path = tempfile.mkstemp(suffix=ext)
+    os.close(fd)
+    file.save(tmp_path)
+
+    job_id = create_job_from_upload(tmp_path, file.filename)
     return jsonify({"job_id": job_id}), 201
 
 
@@ -112,6 +141,11 @@ def get_clip_thumbnail(job_id, clip_id):
 @app.errorhandler(404)
 def not_found(e):
     return jsonify({"error": str(e.description) if hasattr(e, "description") else "not found"}), 404
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({"error": "That file is too large. Try a shorter or smaller video."}), 413
 
 
 if __name__ == "__main__":
