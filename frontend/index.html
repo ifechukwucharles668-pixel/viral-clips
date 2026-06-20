@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Viral Clips — Turn any YouTube video into 10 ready-to-post clips</title>
-<meta name="description" content="Paste a YouTube link. We detect highlights with a transparent, rule-based scoring system and generate 10 ready-to-post clips with captions." />
+<title>Viral Clips — Turn any video into ready-to-post clips</title>
+<meta name="description" content="Upload a video or paste a YouTube link. We detect highlights with a transparent, rule-based scoring system and generate ready-to-post clips with captions." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -28,25 +28,47 @@
     <div class="hero-grid">
       <div>
         <div class="eyebrow">No paid APIs · runs on your own server</div>
-        <h1>Turn Any YouTube Video Into <em>Viral</em> Clips Instantly</h1>
-        <p class="lede">Paste a link. We detect highlights. We generate 10 ready-to-post clips — each scored and explained, with captions included.</p>
+        <h1>Turn Any Video Into <em>Viral</em> Clips Instantly</h1>
+        <p class="lede">Upload a video, or paste a YouTube link. We detect highlights. We generate ready-to-post clips — each scored and explained, with captions included.</p>
 
-        <form id="url-form" class="url-form">
-          <input
-            id="youtube-url-input"
-            type="text"
-            inputmode="url"
-            autocomplete="off"
-            placeholder="https://www.youtube.com/watch?v=…"
-            required
-          />
-          <button type="submit" class="btn btn-primary" id="generate-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
-            Generate Clips
-          </button>
-        </form>
-        <div class="form-error" id="form-error"></div>
-        <div class="url-examples">Works with most public YouTube videos that have captions — auto-generated captions are fine.</div>
+        <div class="upload-card">
+          <div class="upload-tabs">
+            <button type="button" class="tab-btn active" data-tab="upload">Upload a video</button>
+            <button type="button" class="tab-btn" data-tab="youtube">Paste YouTube link</button>
+          </div>
+
+          <div class="tab-panel" data-panel="upload">
+            <label class="file-drop" for="video-file-input" id="file-drop-label">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14"/></svg>
+              <span id="file-drop-text">Tap to choose a video file</span>
+            </label>
+            <input type="file" id="video-file-input" accept="video/*" hidden />
+            <button type="button" class="btn btn-primary upload-submit-btn" id="generate-upload-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+              Generate Clips
+            </button>
+            <div class="form-error" id="upload-error"></div>
+            <div class="url-examples">MP4, MOV, WEBM, or MKV — up to 10 minutes long on this free-tier server.</div>
+          </div>
+
+          <div class="tab-panel" data-panel="youtube" hidden>
+            <div class="youtube-warning">YouTube often blocks automated downloads, so this option may fail on some videos — uploading is more reliable.</div>
+            <form id="url-form" class="url-form">
+              <input
+                id="youtube-url-input"
+                type="text"
+                inputmode="url"
+                autocomplete="off"
+                placeholder="https://www.youtube.com/watch?v=…"
+              />
+              <button type="submit" class="btn btn-primary" id="generate-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+                Generate Clips
+              </button>
+            </form>
+            <div class="form-error" id="form-error"></div>
+          </div>
+        </div>
       </div>
 
       <div class="pulse-timeline" aria-hidden="true">
@@ -191,4 +213,4 @@
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
 </body>
-        </html>
+</html>
