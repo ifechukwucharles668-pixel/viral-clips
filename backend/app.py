@@ -146,7 +146,12 @@ def not_found(e):
 @app.errorhandler(413)
 def too_large(e):
     return jsonify({"error": "That file is too large. Try a shorter or smaller video."}), 413
-
+@app.errorhandler(500)
+def server_error(e):
+    # Without this, an unhandled exception returns Flask's default HTML
+    # error page, which breaks the frontend's res.json() parsing with a
+    # confusing "Unexpected token '<'" error. Always answer in JSON instead.
+    return jsonify({"error": "Something went wrong on the server. Please try again."}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
