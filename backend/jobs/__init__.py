@@ -14,6 +14,7 @@ pipeline once a transcript exists:
 """
 
 import os
+import shutil
 import threading
 import time
 import traceback
@@ -91,7 +92,12 @@ def create_job_from_upload(tmp_uploaded_path: str, original_filename: str) -> st
 
     ext = os.path.splitext(original_filename or "")[1] or ".mp4"
     dest_path = os.path.join(job_dir, f"uploaded_source{ext}")
-    os.replace(tmp_uploaded_path, dest_path)
+    # shutil.move (not os.replace) because the upload temp file and this
+    # storage folder can live on different filesystems inside the
+    # container; os.replace/os.rename can't cross filesystems and would
+    # crash with "Invalid cross-device link" — shutil.move handles that
+    # automatically by copying then removing the original when needed.
+    shutil.move(tmp_uploaded_path, dest_path)
 
     with _lock:
         _jobs[job_id] = record
