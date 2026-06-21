@@ -34,21 +34,12 @@ def _get_model():
     return _model
 
 
-def transcribe_video(media_path: str, language: str = "en"):
-    """
-    Runs local speech-to-text on a video/audio file and returns a transcript
-    in the same shape used everywhere else in this app:
-        [{"start": float, "duration": float, "text": str}, ...]
-
-    Raises RuntimeError if no speech could be detected/transcribed at all.
-    """
-    model = _get_model()
-
+def _run_transcription(model, media_path, language, vad_filter):
     segments, _info = model.transcribe(
         media_path,
         language=language,
-        vad_filter=True,  # skips silent stretches, speeds things up
-        beam_size=1,       # fastest setting; good enough for an MVP
+        vad_filter=vad_filter,
+        beam_size=1,  # fastest setting; good enough for an MVP
     )
 
     entries = []
@@ -63,11 +54,32 @@ def transcribe_video(media_path: str, language: str = "en"):
             "duration": max(end - start, 0.1),
             "text": text,
         })
+    return entries
+
+
+def transcribe_video(media_path: str, language: str = "en"):
+    """
+    Runs local speech-to-text on a video/audio file and returns a transcript
+    in the same shape used everywhere else in this app:
+        [{"start": float, "duration": float, "text": str}, ...]
+
+    Raises RuntimeError if no speech could be detected/transcribed at all.
+    """
+    model = _get_model()
+
+    # vad_filter skips silent stretches (faster), but on quieter or more
+    # compressed phone-mic audio it can sometimes mistake real speech for
+    # silence. If the first pass finds nothing, retry once without it
+    # before giving up.
+    entries = _run_transcription(model, media_path, language, vad_filter=True)
+    if not entries:
+        entries = _run_transcription(model, media_path, language, vad_filter=False)
 
     if not entries:
         raise RuntimeError(
             "Could not detect any speech in this video. Try a clip with "
-            "clearer spoken audio."
+            "clearer spoken audio, recorded with the phone close to "
+            "whoever is talking."
         )
 
     return entries
