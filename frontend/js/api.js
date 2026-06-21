@@ -13,20 +13,22 @@ async function apiCreateJob(youtubeUrl) {
     throw new Error(data.error || "Could not start the job.");
   }
   return data.job_id;
-}async function apiCreateUploadJob(file) {
+}
+
+async function apiCreateUploadJob(file) {
   const formData = new FormData();
   formData.append("video", file);
 
   const res = await fetch(`${API_BASE_URL}/api/jobs/upload`, {
     method: "POST",
-    body: formData, // no Content-Type header — the browser sets the
-                     // multipart boundary automatically for FormData
+    body: formData,
   });
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || "Could not start the job.");
   }
   return data.job_id;
+}
 
 async function apiGetJob(jobId) {
   const res = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`);
@@ -50,7 +52,6 @@ function apiClipThumbnailUrl(jobId, clipId) {
   return `${API_BASE_URL}/api/jobs/${jobId}/clips/${clipId}/thumbnail`;
 }
 
-/** Poll a job until it's done or errored. onUpdate is called on every poll. */
 function pollJob(jobId, { onUpdate, intervalMs = 1500 }) {
   let stopped = false;
 
